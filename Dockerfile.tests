@@ -1,0 +1,20 @@
+FROM python:3.8-slim-buster as tox
+WORKDIR /project
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir tox
+COPY tox.ini .
+COPY requirements-test.txt .
+COPY requirements.txt .
+RUN tox --notest
+
+FROM python:3.8-slim-buster
+WORKDIR /project
+COPY --from=tox /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+COPY --from=tox /project/.tox .tox
+COPY tox.ini .
+COPY app app
+COPY tests tests
+CMD tox
